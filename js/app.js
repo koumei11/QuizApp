@@ -1,6 +1,4 @@
-// API variables
-const baseUrl = 'https://opentdb.com/api.php';
-const amount = 10;
+import QuizCollection from './QuizCollection.js';
 
 // Quiz variables
 let allQuiz = [];
@@ -15,7 +13,6 @@ const startButton = document.getElementsByClassName('js-start-button')[0];
 const backButton = document.getElementsByClassName('js-back-button')[0];
 const totalCorrectAnsDOM = document.getElementsByClassName('js-total-correct-ans')[0];
 const qiuzBlock = document.createElement('DIV');
-qiuzBlock.className = 'quiz-block';
 
 /**
  * Start quiz
@@ -25,25 +22,11 @@ async function startQuizGame(e) {
   totalCorrectAns = 0;
   startScreen.style.display = 'none';
   loadScreen.style.display = 'block';
-  allQuiz = await getQuizData();
-  currentQuestion = allQuiz.shift();
+  allQuiz = await QuizCollection.getQuizData();
+  currentQuestion = QuizCollection.drop();
   createQiuzBlock(currentQuestion);
   loadScreen.style.display = 'none';
   document.getElementsByTagName('body')[0].appendChild(qiuzBlock);
-}
-
-/**
- * Return quiz data
- * @returns quiz data
- */
-async function getQuizData() {
-  const data = await fetch(`${baseUrl}?amount=${amount}`);
-  try {
-    const response = await data.json();
-    return response.results;
-  } catch (e) {
-    console.error(e);
-  }
 }
 
 /**
@@ -52,7 +35,7 @@ async function getQuizData() {
  */
 function createQiuzBlock(quizObject) {
   // Create quiz number block
-  createBlockElements('H1', 'SPAN', '問題', amount - allQuiz.length, 'quiz-number');
+  createBlockElements('H1', 'SPAN', '問題', QuizCollection.getQuestionNumber(), 'quiz-number');
 
   // Create category block
   createBlockElements('H3', 'SPAN', '[ジャンル]', quizObject.category, 'quiz-category');
@@ -97,25 +80,12 @@ function createBlockElement(parentNode, childElement, textContent, className) {
 }
 
 /**
- * Create choices array
- * @param {string} answer quiz answer
- * @param {string array} otherChoices other choices
- * @returns created array
- */
-function createChoicesArray(answer, otherChoices) {
-  const index = Math.floor(Math.random() * 4);
-  otherChoices.splice(index, 0, answer);
-  const choicesArray = otherChoices;
-  return choicesArray;
-}
-
-/**
  * Create choice buttons
  * @param {object} quizObject quiz info
  */
 function createChoiceButtons(quizObject) {
   if (quizObject.type === 'multiple') {
-    const choicesArray = createChoicesArray(quizObject.correct_answer, quizObject.incorrect_answers);
+    const choicesArray = quizObject.createChoicesArray();
     qiuzBlock.appendChild(createChoiceButton(choicesArray[0]));
     qiuzBlock.appendChild(createChoiceButton(choicesArray[1]));
     qiuzBlock.appendChild(createChoiceButton(choicesArray[2]));
@@ -156,10 +126,10 @@ function checkUserAnswer(e) {
 function displayNextScreen() {
   qiuzBlock.innerHTML = '';
   if (allQuiz.length !== 0) {
-    currentQuestion = allQuiz.shift();
+    currentQuestion = QuizCollection.drop();
     createQiuzBlock(currentQuestion);
   } else {
-    // qiuzBlock.parentNode.removeChild(qiuzBlock);
+    qiuzBlock.parentNode.removeChild(qiuzBlock);
     totalCorrectAnsDOM.textContent = totalCorrectAns;
     resultScreen.style.display = 'block';
   }
